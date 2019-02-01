@@ -49,6 +49,8 @@ np.random.seed(0)
 import pandas as pd
 ```
 
+    /anaconda3/lib/python3.6/site-packages/h5py/__init__.py:36: FutureWarning: Conversion of the second argument of issubdtype from `float` to `np.floating` is deprecated. In future, it will be treated as `np.float64 == np.dtype(float).type`.
+      from ._conv import register_converters as _register_converters
     Using TensorFlow backend.
 
 
@@ -79,6 +81,30 @@ data = newsgroups.data
 labels = newsgroups.target
 ```
 
+
+```python
+len(data)
+```
+
+
+
+
+    11314
+
+
+
+
+```python
+set(labels)
+```
+
+
+
+
+    {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19}
+
+
+
 Next, we'll need to convert our data to a one-hot encoded format. Keras has a utility function that can easily do this for us called `to_categorical()`, which can be found in `keras.utils`.
 
 In the cell below, call the `to_categorical()` function and pass in `labels`, as well as the number of unique classes in our labels, which is `20`.
@@ -87,6 +113,19 @@ In the cell below, call the `to_categorical()` function and pass in `labels`, as
 ```python
 labels = keras.utils.to_categorical(labels, 20)
 ```
+
+
+```python
+labels[0]
+```
+
+
+
+
+    array([0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+           0., 0., 0.], dtype=float32)
+
+
 
 ### Creating Sequences From Text
 
@@ -108,6 +147,41 @@ tokenizer.fit_on_texts(list(data))
 list_tokenized_train = tokenizer.texts_to_sequences(data)
 X_t = sequence.pad_sequences(list_tokenized_train, maxlen=100)
 ```
+
+
+```python
+X_t.shape
+```
+
+
+
+
+    (11314, 100)
+
+
+
+
+```python
+X_t[0]
+```
+
+
+
+
+    array([   32,   211,     8,    26,  1308,    27,   171,    66,    47,
+             123,  9879,    63,    16,    17,   298,     8,   708,     1,
+              86,   263,    11,    26,     4,    36,  1497,  2266,   298,
+            1162,     2,    18,    14,     1,  1347, 13637,   843, 15448,
+              11,    26,   337,     4,     1,  4017,    80,   182,   484,
+               7,  1376,     1,   844,  8164,    26,  1835,    14,     1,
+             816,     3,     1,   726,    17,     9,    44,     8,    88,
+              27,   171,    39,     4,   828,   273,  1078,  2908,   198,
+               3,  2804,   153,    17,   298,     9,   239,   628,    25,
+             808,   357,    13,    21,    16,    17,   384,   298,   181,
+             112,   188,   206,  1498,  1341,     2,    13,    35,    58,
+            7860], dtype=int32)
+
+
 
 Great! We've now finished preprocessing our data, and we're ready to build, compile, and train our models!
 
@@ -135,14 +209,15 @@ In the cell below, create our `LSTM` model.
 ```python
 # LSTM Model
 
-lstm_model = Sequential()
-lstm_model.add(Embedding(20000, 128))
-lstm_model.add(LSTM(50, return_sequences=True))
-lstm_model.add(GlobalMaxPool1D())
-lstm_model.add(Dropout(0.5))
-lstm_model.add(Dense(50, activation='relu'))
-lstm_model.add(Dropout(0.5))
-lstm_model.add(Dense(20, activation='softmax'))
+lstm_model = Sequential() # Instantiate a sequential model - pass information sequentially
+lstm_model.add(Embedding(20000, 128)) # Add a word-embedding layer takes in 128 nodes
+# LSTM layer, return_sequences is set to true so back propogation learns from every step
+lstm_model.add(LSTM(50, return_sequences=True)) 
+lstm_model.add(GlobalMaxPool1D()) # Downsampling our information into 1-value (max value from LSTM)
+lstm_model.add(Dropout(0.5)) # What is this? Regularization layer, drops half of the nodes
+lstm_model.add(Dense(50, activation='relu')) # Relu on a layer
+lstm_model.add(Dropout(0.5)) # Drop half of those nodes
+lstm_model.add(Dense(20, activation='softmax')) # add 20 nodes using softmax activation
 ```
 
 ### Compilation Parameters
@@ -158,6 +233,7 @@ In the cell below, call our model's `.compile()` method and pass in the followin
 
 ```python
 lstm_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+# adaptive moment(um) estimation
 ```
 
 ### Inspecting Our Compiled Model
@@ -215,15 +291,15 @@ lstm_model.fit(X_t, labels, epochs=2, batch_size=32, validation_split=0.1)
 
     Train on 10182 samples, validate on 1132 samples
     Epoch 1/2
-    10182/10182 [==============================] - 52s 5ms/step - loss: 2.9184 - acc: 0.0855 - val_loss: 2.5967 - val_acc: 0.1749
+    10182/10182 [==============================] - 39s 4ms/step - loss: 2.9214 - acc: 0.0842 - val_loss: 2.5934 - val_acc: 0.1422
     Epoch 2/2
-    10182/10182 [==============================] - 50s 5ms/step - loss: 2.2823 - acc: 0.2511 - val_loss: 1.7920 - val_acc: 0.5141
+    10182/10182 [==============================] - 40s 4ms/step - loss: 2.3723 - acc: 0.2114 - val_loss: 1.9300 - val_acc: 0.4267
 
 
 
 
 
-    <keras.callbacks.History at 0x23438ce46a0>
+    <keras.callbacks.History at 0x1a1a5aee48>
 
 
 
@@ -293,15 +369,15 @@ gru_model.fit(X_t, labels, epochs=2, batch_size=32, validation_split=0.1)
 
     Train on 10182 samples, validate on 1132 samples
     Epoch 1/2
-    10182/10182 [==============================] - 41s 4ms/step - loss: 2.9062 - acc: 0.1079 - val_loss: 2.5377 - val_acc: 0.3207
+    10182/10182 [==============================] - 33s 3ms/step - loss: 2.9117 - acc: 0.1049 - val_loss: 2.5611 - val_acc: 0.3180
     Epoch 2/2
-    10182/10182 [==============================] - 40s 4ms/step - loss: 2.2111 - acc: 0.3149 - val_loss: 1.7253 - val_acc: 0.5256
+    10182/10182 [==============================] - 32s 3ms/step - loss: 2.2237 - acc: 0.3169 - val_loss: 1.7175 - val_acc: 0.5247
 
 
 
 
 
-    <keras.callbacks.History at 0x23438c236a0>
+    <keras.callbacks.History at 0x1a1ac55cf8>
 
 
 
